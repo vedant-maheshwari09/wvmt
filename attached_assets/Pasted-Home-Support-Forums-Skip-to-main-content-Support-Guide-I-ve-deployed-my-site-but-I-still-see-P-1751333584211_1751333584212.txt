@@ -1,0 +1,280 @@
+Home
+Support Forums
+Skip to main content
+[Support Guide] I’ve deployed my site but I still see “Page not found”
+Support
+Support Guides
+settings-configsupport-guide
+
+Log In
+
+​
+
+​
+[Support Guide] I’ve deployed my site but I still see “Page not found”
+Support
+Support Guides
+settings-config
+support-guide
+Feb 2019
+Aug 2021
+
+Dennis
+
+125
+Feb 2019
+:sparkles: AskNetlify’s Version :sparkles:
+
+How can I check for missing files in my last site deploy?
+Copy the prompt above and paste it into AskNetlify, and it’ll break down this info. You can also ask clarifying questions. Still need help? No problem! We’re happy to clarify.
+Last reviewed by Netlify Support - November 2024
+
+Netlify attempts to look up a file based on several XOR filters, and when all of these fail, we end up serving a 404 page. For example, a request made to /example/ would check /example/index.html, /example.html, /example/home.html and several other combinations (not necessarily in the same order) before hitting the 404. However, in case you were not expecting a 404 at a particular URL, you might be interested in finding out the reason and potentially fixing it. This guide aims to cover the most common reasons (and their solutions) on Netlify. This guide assumes that the common reasons for a 404 (like an incorrect URL) do not apply.
+
+Incorrect publish directory: If someone is trying to deploy their site directly, without any build step, a common scenario we’ve noticed is that they upload their site to a git repo and place all the files inside a sub-folder. However, when connecting the site to Netlify, due to the lack of framework, we leave the responsibility of configuring the correct settings to the user and some users don’t configure the publish directory. Thus, when they visit their site, they see a 404, as the files actually live inside https://their-site.netlify.app/sub-folder. In this case, either move all your files outside the sub-folder or change the publish directory in Netlify Site settings.
+
+SPA redirect rule missing: A variety of tools, like Create React App, Vite, Angular, etc., are used to create Single-Page Applications. These applications don’t have an HTML page per path but instead rely on JavaScript to handle the navigation. For such apps, it is important to have the following contents:
+
+/* /index.html 200
+as the contents of the _redirects file which should exist in the public (or similar) folder, so that it’s copied over to your publish directory when the site is being built.
+
+Server-Side Rendered Content: A lot of frameworks these days, like Next.js, Gatsby, Nuxt, Astro, Remix, SvelteKit, etc. support Server Side Rendering on Netlify. Netlify officially maintains its own integrations for Next.js and Gatsby, while the other frameworks maintain their integrations for Netlify. In the case of Next.js, for example, the Next.js Runtime can generate several redirects for even a minimal Next.js site. Even in case of Gatsby, if you use SSR/DSG, we would generate a few redirects. For any other framework that uses SSR using Netlify Functions, there would be at least 1 redirect that would handle this routing. So, if your deploy shows no redirect (or a fairly less number of redirects in case of Next.js), you can be sure that something went wrong with the integration. It might be worth trying to consult docs of the respective integration to make sure it’s correctly configured.
+
+Another situation with SSR could be that, you could be sending a 404 for a request based on some conditional logic you might be having in your code.
+
+In case the 404 is coming from a proxied URL, make sure the proxy destination is not serving a 404.
+
+In case your HTML page loads fine, but the assets are missing/throwing a 404, make sure their paths are correct. Create React App checks for homepage in package.json, and thus, could configure the paths to the assets differently than expected.
+
+Check if you’re running any Edge Functions that could be blocking the request.
+
+If you’re using rewrites to proxy a site into the sub-directory of another, make sure the assets are published at a URL that matches the directory structure of the proxy-source. You can always use <base> tag or absolute URLs to make sure assets load reliably.
+
+In case of doubts or confusion, it could be useful to try to build your site locally (using the build command and not the dev server) or browse/download your deploy as described in this article: New feature: Browse files in your deploy with the Deploy File Browser , to make sure a file actually exists at the path you’re requesting.
+
+If none of this applies to you or if you’re still having issues, please open another thread to discuss. Make sure to include as many details as possible regarding your setup.
+
+
+
+
+
+
+
+read
+27 min
+
+Top replies
+19 days later
+
+philhawksworth
+Developer Experience Engineer
+Mar 2019
+Another common cause for this that I’ve noticed comes from not specifying in the deploy settings which folder to publish.
+
+If your project has a build which generates the site to publish, be sure to tell Netlify where to find that directory.
+
+In the example below, the “Publish directory” is dist
+
+52
+Screenshot 2019-03-18 at 12.33.52.png
+1884×1046 76.6 KB
+Find this in your settings at:
+
+https://app.netlify.com/sites/{YOUR_SITE}/settings/deploys#continuous-deployment
+
+
+1 year later
+
+Ethandf90
+
+1
+Sep 2020
+I can reach my website with url, but it shows the error when I refresh the page, or leave the page idle for a while. I use “CI= react-scripts build” and by default the folder is /build. And I do have [[redirects]] in netlify.toml.
+Screen Shot 2020-09-05 at 4.52.59 PM
+
+
+
+luke
+Support Engineer
+Sep 2020
+In order to troubleshoot this, we need to be able to track the HTTP response with this issue. The simplest way to do this is to send us the x-nf-request-id header which we send with every HTTP response.
+
+There more information about this header here:
+
+Last reviewed by Netlify Support staff August 2023 What is the x-nf-request-id header? Web servers and web browsers communicate using a protocol called HTTP - which stands for “HyperText Transfer Protocol”. Both web browsers and web servers use a feature called headers as part of this protocol. The headers that web browsers send are called “request headers” because the browser in making an “HTTP request”. The web servers headers are called “response headers” because web servers send an “HTTP …
+If that header isn’t available for any reason, please send the information it replaces (or as many of these details as possible). Those details are:
+
+the complete URL requested
+the IP address for the system making the request
+the IP address for the CDN node that responded
+the day of the request
+the time of the request
+the timezone the time is in
+
+10 days later
+
+Cyndi
+Sep 2020
+Im still unsuccessful with this error and still seeing Page Not Found
+I’ve done the following
+
+This site was dragged and dropped for upload
+Created netlify.toml that is located in my “root” Public folder
+Screen Shot 2020-09-18 at 7.23.16 PM
+
+Still not sure why this is happening. Can you please help? Thanks
+
+
+
+BernardA
+
+1
+Sep 2020
+I am afraid that you will not be able to deploy Nextjs to Netlify without losing functionality.
+
+It should work, meaning that it will not throw errors, with the following netlify.toml
+
+[build]
+command = "npm run build && npm run export"
+publish = "out"
+If you read Nextjs docs on the next export command you will see that you lose a bunch of very interesting Nextjs features.
+
+I moved my app over to Vercel ( Nextjs own deployment structure ) due to this.
+
+See also this discussion
+
+
+
+fool
+Sep 2020
+Have you seen these articles? They talk through best practices for Next.js on Netlify:
+
+
+Netlify
+
+nextjs
+A powerful serverless platform with an intuitive git-based workflow. Automated deployments, shareable previews, and much more. Get started for free!
+
+They may not solve all of your problems, but I think they will solve some :slight_smile:
+
+
+
+lowi307
+Sep 2020
+Hi Dennis, Hi everyone.
+I’m Lowi, newbie here.
+I’m stuck with 404 page though the deployment is published.
+I’m using an Eleventy theme that runs in localhost.
+I checked the /index.html and it seems good.
+Please could you help me?
+Thanks in advance!
+
+Here’s a pic showing deploy log
+
+deploy log
+deploy log
+1818×960 120 KB
+
+
+luke
+Support Engineer
+Sep 2020
+Hi, @lowi307. What site is this for?
+
+You can private message (PM) that to one of our support staff and I’ve confirmed that PMs are enabled for your community login. Note, that only one person can see the PM and this will likely mean a slower reply than posting the information publicly. Please feel free to reply to however you prefer though.
+
+
+
+lowi307
+Sep 2020
+Hi @luke, thanks for replying!
+I sent you a PM for better communication, then I’ll post the solution here.
+
+
+
+ghudson46
+Sep 2020
+I deployed my site with a custom domain I purchased from you guys and I’m getting a 404 error with “Looks like you’ve followed a broken link or entered a URL that doesn’t exist on this site.”
+
+
+
+YousefRabei
+Oct 2020
+TL;DR: switch from BrowserRouter to HashRouter.
+
+I was able to enter my react site with the link and even access the routes with the nav links BUT when i refresh any page exept the homepage the i got this annoying 404 error (I already have my styled 404 page) and when i try to access any page from the url even if it exist i get the same 404 error.
+
+MY SOLUTION:
+I switched from using BrowserRouter to use HashRouter from react-router-dom
+
+
+
+rmanshani06
+Oct 2020
+Hi,
+I just started using Github, and I realized that my code was rather properly written and I was able to publish it as well, but for some very odd reason “Page not found” error kept popping up. Even after downloading the Deploy, as instructed, I can see that the downloaded “published” file has the “index.html” in it. Would you be able to assist me with this?
+
+
+
+gregraven
+Netlify Pilot
+Oct 2020
+@rmanshani06 Welcome to the Netlify community.
+
+Please provide your Netlify site name, domains, and other information when you post. The better the post = the faster we can help!
+
+Is your index.html at the top level of your website? That’s where it must be. If it is in a sub-folder the default URL won’t find it.
+
+
+
+rmanshani06
+Oct 2020
+Netlify Site Name: Coding Practice
+Domain Name: https://practical-varahamihira-e3e406
+I hope this helps.
+When you say if it’s at the top level of my website, can you elaborate a little on that?
+
+
+
+Scott
+Oct 2020
+Hey @rmanshani06,
+
+Site’s loading for me out in the UK! You may want to clear your browser’s cache :+1:.
+
+Coding_Practice
+Coding_Practice
+1132×246 16.2 KB
+
+
+rmanshani06
+Oct 2020
+Hi,
+the reason why I contacted you was regarding the fact that if you submit on the Demo Contact Tab, that is when the “error” pops up of the “Page Not Found”. Instead, I think it should be “Thank you for your response”. You can correct me, if I am wrong about this?
+
+
+
+rmanshani06
+Oct 2020
+To be more specific, the Form submission tab is what is not working for me on Github and that is when the error pops up of “Page Not Found”.
+
+
+
+Scott
+Oct 2020
+You’ll want to ensure you add a success page successfully. You should check out the docs!
+
+If you continue to encounter errors, please create a new topic as we’re now looking more specifically at forms.
+
+
+docs.netlify.com
+
+Forms setup
+Use built-in form handling to simplify adding and managing forms for your project. There’s no need to make an API call or include extra form handling code.
+
+
+
+YousefAbood
+Oct 2020
+I just began HTML/CSS and I created my repository & Linked it with Netlify yet i get the same issue what do i do?
+
